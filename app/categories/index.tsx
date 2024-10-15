@@ -1,5 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, Button, FlatList, StyleSheet } from 'react-native';
+import {
+  View,
+  Text,
+  TextInput,
+  Button,
+  FlatList,
+  StyleSheet,
+  Modal,
+  TouchableOpacity,
+  Alert,
+} from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { MaterialIcons } from '@expo/vector-icons';
 
@@ -12,6 +22,9 @@ const CategoriesScreen = () => {
   const [categoryName, setCategoryName] = useState('');
   const [categories, setCategories] = useState<Category[]>([]);
   const [filter, setFilter] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [editModalVisible, setEditModalVisible] = useState(false);
 
   useEffect(() => {
     loadCategories();
@@ -30,12 +43,53 @@ const CategoriesScreen = () => {
 
   const addCategory = () => {
     if (!categoryName) return;
-    const newCategory = { idCategoria: Date.now().toString(), nombre: categoryName };
+
+    const newCategory = {
+      idCategoria: `${categories.length + 1}`,
+      nombre: categoryName,
+    };
+
     storeCategory(newCategory);
     setCategoryName('');
+    setModalVisible(false);
   };
 
-  const filteredCategories = categories.filter((cat) => cat.nombre.includes(filter));
+  const editCategory = async () => {
+    if (selectedCategory && categoryName) {
+      const updatedCategories = categories.map((category) =>
+        category.idCategoria === selectedCategory.idCategoria
+          ? { ...category, nombre: categoryName }
+          : category
+      );
+      setCategories(updatedCategories);
+      await AsyncStorage.setItem('categories', JSON.stringify(updatedCategories));
+      setEditModalVisible(false);
+      setSelectedCategory(null);
+      setCategoryName('');
+    }
+  };
+
+  const deleteCategory = async () => {
+    if (selectedCategory) {
+      const updatedCategories = categories.filter(
+        (category) => category.idCategoria !== selectedCategory.idCategoria
+      );
+      setCategories(updatedCategories);
+      await AsyncStorage.setItem('categories', JSON.stringify(updatedCategories));
+      setEditModalVisible(false);
+      setSelectedCategory(null);
+    }
+  };
+
+  const handleCategoryClick = (category: Category) => {
+    setSelectedCategory(category);
+    setCategoryName(category.nombre);
+    setEditModalVisible(true);
+  };
+
+  const filteredCategories = categories.filter((cat) =>
+    cat.nombre.includes(filter)
+  );
 
   return (
     <View style={styles.container}>
@@ -46,23 +100,83 @@ const CategoriesScreen = () => {
         value={filter}
         onChangeText={setFilter}
       />
-      <TextInput
-        style={styles.input}
-        placeholder="Nombre de la categoría"
-        value={categoryName}
-        onChangeText={setCategoryName}
-      />
-      <Button title="Agregar Categoría" onPress={addCategory} color="#6200ea" />
       <FlatList
         data={filteredCategories}
         keyExtractor={(item) => item.idCategoria}
         renderItem={({ item }) => (
-          <View style={styles.item}>
-            <MaterialIcons name="category" size={24} color="#6200ea" />
-            <Text style={styles.itemText}>{item.nombre}</Text>
-          </View>
+          <TouchableOpacity onPress={() => handleCategoryClick(item)}>
+            <View style={styles.item}>
+              <MaterialIcons name="category" size={24} color="#6200ea" />
+              <Text style={styles.itemText}>{item.nombre} ({item.idCategoria})</Text>
+            </View>
+          </TouchableOpacity>
         )}
       />
+
+      {/* Botón flotante para agregar */}
+      <TouchableOpacity
+        style={styles.fab}
+        onPress={() => setModalVisible(true)}
+      >
+        <MaterialIcons name="add" size={30} color="white" />
+      </TouchableOpacity>
+
+      {/* Modal para agregar categoría */}
+      <Modal
+        visible={modalVisible}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Agregar Categoría</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Nombre de la categoría"
+              value={categoryName}
+              onChangeText={setCategoryName}
+            />
+            <View style={styles.buttonContainer}>
+              <Button title="Guardar" onPress={addCategory} color="#6200ea" />
+              <Button
+                title="Cancelar"
+                onPress={() => setModalVisible(false)}
+                color="#999"
+              />
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Modal para editar/eliminar categoría */}
+      <Modal
+        visible={editModalVisible}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setEditModalVisible(false)}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Editar o Eliminar Categoría</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Nombre de la categoría"
+              value={categoryName}
+              onChangeText={setCategoryName}
+            />
+            <View style={styles.buttonContainer}>
+              <Button title="Guardar" onPress={editCategory} color="#6200ea" />
+              <Button title="Eliminar" onPress={deleteCategory} color="#d32f2f" />
+              <Button
+                title="Cancelar"
+                onPress={() => setEditModalVisible(false)}
+                color="#999"
+              />
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };
@@ -95,6 +209,41 @@ const styles = StyleSheet.create({
   itemText: {
     marginLeft: 10,
     fontSize: 18,
+  },
+  fab: {
+    position: 'absolute',
+    right: 20,
+    bottom: 20,
+    backgroundColor: '#6200ea',
+    borderRadius: 30,
+    width: 60,
+    height: 60,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOpacity: 0.3,
+    shadowOffset: { width: 0, height: 2 },
+  },
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.5)',
+  },
+  modalContent: {
+    width: 300,
+    padding: 20,
+    backgroundColor: 'white',
+    borderRadius: 10,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 20,
+  },
+  buttonContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
   },
 });
 

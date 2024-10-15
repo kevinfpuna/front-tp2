@@ -4,6 +4,7 @@ import SalesScreen from './sales/index'; // Ruta corregida
 import ConsultasScreen from './sales/consultas'; // Ruta corregida
 import CategoriesScreen from './categories/index'; // Ruta corregida
 import ProductsScreen from './products/index'; // Ruta corregida
+import SaleDetailsScreen from './sales/detalle'; // Ruta corregida
 
 // Definir el componente del Drawer (sidebar)
 const Drawer = createDrawerNavigator();
@@ -11,7 +12,7 @@ const Drawer = createDrawerNavigator();
 export default function RootLayout() {
   return (
     <Drawer.Navigator
-      initialRouteName="sales/consultas"
+      initialRouteName="sales/index"
       screenOptions={{
         drawerStyle: {
           backgroundColor: '#f5f5f5',
@@ -26,7 +27,7 @@ export default function RootLayout() {
         name="sales/consultas"
         component={ConsultasScreen}
         options={{
-          title: 'Consultas de Ventas',
+          title: 'Consultas',
           drawerIcon: ({ color }) => (
             <MaterialIcons name="search" size={24} color={color} />
           ),
@@ -46,7 +47,7 @@ export default function RootLayout() {
         name="categories/index"
         component={CategoriesScreen}
         options={{
-          title: 'Administrar Categorías',
+          title: 'Categorías',
           drawerIcon: ({ color }) => (
             <MaterialIcons name="category" size={24} color={color} />
           ),
@@ -56,10 +57,18 @@ export default function RootLayout() {
         name="products/index"
         component={ProductsScreen}
         options={{
-          title: 'Administrar Productos',
+          title: 'Productos',
           drawerIcon: ({ color }) => (
             <MaterialIcons name="inventory" size={24} color={color} />
           ),
+        }}
+      />
+      <Drawer.Screen
+        name="sales/detalle"
+        component={SaleDetailsScreen}
+        options={{
+          title: 'Detalles de la Venta',
+          drawerItemStyle: { display: 'none' }, // Hacerlo invisible
         }}
       />
     </Drawer.Navigator>
