@@ -13,6 +13,9 @@ import {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { MaterialIcons } from '@expo/vector-icons';
 
+import { useFocusEffect } from '@react-navigation/native';
+
+
 type Product = {
   idProducto: string;
   nombre: string;
@@ -57,10 +60,31 @@ const SalesScreen = () => {
   const [cedula, setCedula] = useState('');
   const [nombre, setNombre] = useState('');
   const [apellido, setApellido] = useState('');
+  const [isLoading, setIsLoading] = useState(true); // Estado de carga
 
-  useEffect(() => {
-    loadProducts();
-  }, []);
+
+    // Usamos useFocusEffect para cargar datos cuando la pantalla entra en foco
+    useFocusEffect(
+      React.useCallback(() => {
+        const fetchData = async () => {
+          try {
+            setIsLoading(true); // Iniciamos la carga
+            await loadProducts(); // Cargamos productos
+          } catch (error) {
+            console.error('Error cargando datos:', error);
+          } finally {
+            setIsLoading(false); // Finalizamos la carga
+          }
+        };
+  
+        fetchData(); // Ejecutamos la función asíncrona al entrar en foco
+  
+        return () => {
+          // Aquí puedes limpiar cualquier efecto si es necesario
+        };
+      }, [])
+    );
+  
 
   const loadProducts = async () => {
     const storedProducts = await AsyncStorage.getItem('products');

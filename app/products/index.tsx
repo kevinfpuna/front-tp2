@@ -13,6 +13,8 @@ import {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { MaterialIcons } from '@expo/vector-icons';
 import { Picker } from '@react-native-picker/picker';
+import { useFocusEffect } from '@react-navigation/native';
+
 
 type Product = {
   idProducto: string;
@@ -36,11 +38,19 @@ const ProductsScreen = () => {
   const [modalVisible, setModalVisible] = useState(false);
   const [editModalVisible, setEditModalVisible] = useState(false); // Modal para editar/eliminar
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null); // Producto seleccionado para editar/eliminar
+  const [isLoading, setIsLoading] = useState(true); // Estado de carga
+
 
   useEffect(() => {
     loadProducts();
-    loadCategories();
   }, []);
+
+   // Recargar categorías cada vez que la pantalla se enfoque
+   useFocusEffect(
+    React.useCallback(() => {
+      loadCategories();
+    }, [])
+  );
 
   const loadProducts = async () => {
     const storedProducts = await AsyncStorage.getItem('products');

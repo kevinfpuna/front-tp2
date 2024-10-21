@@ -13,6 +13,9 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 
+import { useFocusEffect } from '@react-navigation/native';
+
+
 type SaleHeader = {
   idVenta: string;
   fecha: string;
@@ -41,6 +44,8 @@ const SalesConsultasScreen = () => {
   const [clientModalVisible, setClientModalVisible] = useState(false);
   const [filteredClients, setFilteredClients] = useState<Client[]>([]);
   const [clientSearch, setClientSearch] = useState('');
+  const [isLoading, setIsLoading] = useState(true); // Estado de carga
+
 
   type RootStackParamList = {
     'sales/detalle': { sale: SaleHeader };
@@ -48,11 +53,28 @@ const SalesConsultasScreen = () => {
   
   const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
 
-  useEffect(() => {
-    loadSales();
-    loadClients();
-  }, []);
+  // Usamos useFocusEffect para cargar datos cuando la pantalla entra en foco
+  useFocusEffect(
+    React.useCallback(() => {
+      const fetchData = async () => {
+        try {
+          setIsLoading(true); // Iniciamos la carga
+          await loadSales(); // Cargamos ventas
+          await loadClients(); // Cargamos clientes
+        } catch (error) {
+          console.error('Error cargando datos:', error);
+        } finally {
+          setIsLoading(false); // Finalizamos la carga
+        }
+      };
 
+      fetchData(); // Ejecutamos la función asíncrona al entrar en foco
+
+      return () => {
+        // Aquí puedes limpiar cualquier efecto si es necesario
+      };
+    }, [])
+  );
   const loadSales = async () => {
     const storedSales = await AsyncStorage.getItem('sales');
     setSales(storedSales ? JSON.parse(storedSales) : []);
@@ -85,6 +107,35 @@ const SalesConsultasScreen = () => {
     setClientModalVisible(false);
   };
 
+     // Función para parsear la fecha en formato legible
+    function parseDate(fechaString: string): string {
+      const date = new Date(fechaString);
+      
+      // Opciones de formato de fecha
+      const options = {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: true, // Para mostrar AM/PM
+      };
+
+      return date.toLocaleDateString('es-ES', options); // Formatear la fecha
+    };
+
+    function getNombreCompletoCliente(idCliente: string): string {
+      const cliente = clients.find((client) => client.idCliente === idCliente);
+      return cliente ? `${cliente.nombre} ${cliente.apellido}` : 'Cliente desconocido';
+  }
+
+   
+    
+    
+
+    
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Consultas de Ventas</Text>
@@ -113,9 +164,9 @@ const SalesConsultasScreen = () => {
               navigation.navigate('sales/detalle', { sale: item })
             }
           >
-            <Text>Fecha: {item.fecha}</Text>
+            <Text>Fecha: {parseDate(item.fecha)}</Text>
             <Text>Total: ${item.total}</Text>
-            <Text>Cliente: {item.idCliente}</Text>
+            <Text>Cliente: {getNombreCompletoCliente(item.idCliente)}</Text>
           </TouchableOpacity>
         )}
       />

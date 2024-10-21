@@ -19,6 +19,7 @@ type Category = {
 };
 
 const CategoriesScreen = () => {
+
   const [categoryName, setCategoryName] = useState('');
   const [categories, setCategories] = useState<Category[]>([]);
   const [filter, setFilter] = useState('');
@@ -29,6 +30,8 @@ const CategoriesScreen = () => {
   useEffect(() => {
     loadCategories();
   }, []);
+
+  
 
   const loadCategories = async () => {
     const storedCategories = await AsyncStorage.getItem('categories');
