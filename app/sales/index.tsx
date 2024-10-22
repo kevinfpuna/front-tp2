@@ -16,7 +16,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 
 
-type Product = {
+export type Product = {
   idProducto: string;
   nombre: string;
   idCategoria: string;
@@ -30,7 +30,7 @@ type ProductInCart = {
   precio: number;
 };
 
-type Client = {
+export type Client = {
   idCliente: string;
   cedula: string;
   nombre: string;
