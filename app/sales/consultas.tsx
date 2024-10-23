@@ -12,9 +12,7 @@ import {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
-
 import { useFocusEffect } from '@react-navigation/native';
-
 
 type SaleHeader = {
   idVenta: string;
@@ -37,6 +35,11 @@ type Client = {
   apellido: string;
 };
 
+type RootStackParamList = {
+  'sales/detalle': { sale: SaleHeader };
+  'sales/ClientOrdersScreen': { clientId: string }; // Ruta para la pantalla de órdenes del cliente
+};
+
 const SalesConsultasScreen = () => {
   const [sales, setSales] = useState<SaleHeader[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
@@ -44,37 +47,24 @@ const SalesConsultasScreen = () => {
   const [clientModalVisible, setClientModalVisible] = useState(false);
   const [filteredClients, setFilteredClients] = useState<Client[]>([]);
   const [clientSearch, setClientSearch] = useState('');
-  const [isLoading, setIsLoading] = useState(true); // Estado de carga
 
-
-  type RootStackParamList = {
-    'sales/detalle': { sale: SaleHeader };
-  };
-  
   const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
 
-  // Usamos useFocusEffect para cargar datos cuando la pantalla entra en foco
   useFocusEffect(
     React.useCallback(() => {
       const fetchData = async () => {
         try {
-          setIsLoading(true); // Iniciamos la carga
-          await loadSales(); // Cargamos ventas
-          await loadClients(); // Cargamos clientes
+          await loadSales();
+          await loadClients();
         } catch (error) {
           console.error('Error cargando datos:', error);
-        } finally {
-          setIsLoading(false); // Finalizamos la carga
         }
       };
 
-      fetchData(); // Ejecutamos la función asíncrona al entrar en foco
-
-      return () => {
-        // Aquí puedes limpiar cualquier efecto si es necesario
-      };
+      fetchData();
     }, [])
   );
+
   const loadSales = async () => {
     const storedSales = await AsyncStorage.getItem('sales');
     setSales(storedSales ? JSON.parse(storedSales) : []);
@@ -102,39 +92,31 @@ const SalesConsultasScreen = () => {
     setFilteredClients(filtered);
   };
 
+  // Restauramos la navegación a `ClientOrdersScreen`
   const handleClientSelect = (client: Client) => {
-    setFilter({ ...filter, cedula: client.cedula });
     setClientModalVisible(false);
+    // Navegar a la pantalla 'ClientOrdersScreen' pasando el ID del cliente
+    navigation.navigate('sales/ClientOrdersScreen', { clientId: client.idCliente });
   };
 
-     // Función para parsear la fecha en formato legible
-    function parseDate(fechaString: string): string {
-      const date = new Date(fechaString);
-      
-      // Opciones de formato de fecha
-      const options = {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-        hour12: true, // Para mostrar AM/PM
-      };
-
-      return date.toLocaleDateString('es-ES', options); // Formatear la fecha
+  function parseDate(fechaString: string): string {
+    const date = new Date(fechaString);
+    const options: Intl.DateTimeFormatOptions = {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: true,
     };
-
-    function getNombreCompletoCliente(idCliente: string): string {
-      const cliente = clients.find((client) => client.idCliente === idCliente);
-      return cliente ? `${cliente.nombre} ${cliente.apellido}` : 'Cliente desconocido';
+    return date.toLocaleDateString('es-ES', options);
   }
 
-   
-    
-    
-
-    
+  function getNombreCompletoCliente(idCliente: string): string {
+    const cliente = clients.find((client) => client.idCliente === idCliente);
+    return cliente ? `${cliente.nombre} ${cliente.apellido}` : 'Cliente desconocido';
+  }
 
   return (
     <View style={styles.container}>
@@ -160,9 +142,7 @@ const SalesConsultasScreen = () => {
         renderItem={({ item }) => (
           <TouchableOpacity
             style={styles.item}
-            onPress={() =>
-              navigation.navigate('sales/detalle', { sale: item })
-            }
+            onPress={() => navigation.navigate('sales/detalle', { sale: item })}
           >
             <Text>Fecha: {parseDate(item.fecha)}</Text>
             <Text>Total: ${item.total}</Text>
@@ -171,7 +151,6 @@ const SalesConsultasScreen = () => {
         )}
       />
 
-      {/* Modal para buscar cliente */}
       <Modal visible={clientModalVisible} animationType="slide" transparent={true}>
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
@@ -190,9 +169,7 @@ const SalesConsultasScreen = () => {
                   style={styles.clientItem}
                   onPress={() => handleClientSelect(item)}
                 >
-                  <Text>
-                    {item.nombre} {item.apellido} - {item.cedula}
-                  </Text>
+                  <Text>{item.nombre} {item.apellido} - {item.cedula}</Text>
                 </TouchableOpacity>
               )}
             />
@@ -205,61 +182,16 @@ const SalesConsultasScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 20,
-    backgroundColor: '#f9f9f9',
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 20,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 8,
-    padding: 10,
-    marginBottom: 20,
-  },
-  item: {
-    padding: 15,
-    borderBottomWidth: 1,
-    borderColor: '#eee',
-  },
-  clientButton: {
-    backgroundColor: '#6200ea',
-    padding: 10,
-    borderRadius: 8,
-    marginBottom: 20,
-    alignItems: 'center',
-  },
-  clientButtonText: {
-    color: 'white',
-    fontWeight: 'bold',
-  },
-  modalContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-  },
-  modalContent: {
-    width: 300,
-    padding: 20,
-    backgroundColor: 'white',
-    borderRadius: 10,
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 20,
-  },
-  clientItem: {
-    padding: 10,
-    borderBottomWidth: 1,
-    borderColor: '#ddd',
-  },
+  container: { flex: 1, padding: 20, backgroundColor: '#f9f9f9' },
+  title: { fontSize: 24, fontWeight: 'bold', marginBottom: 20 },
+  input: { borderWidth: 1, borderColor: '#ddd', borderRadius: 8, padding: 10, marginBottom: 20 },
+  item: { padding: 15, borderBottomWidth: 1, borderColor: '#eee' },
+  clientButton: { backgroundColor: '#6200ea', padding: 10, borderRadius: 8, marginBottom: 20, alignItems: 'center' },
+  clientButtonText: { color: 'white', fontWeight: 'bold' },
+  modalContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0, 0, 0, 0.5)' },
+  modalContent: { width: 300, padding: 20, backgroundColor: 'white', borderRadius: 10 },
+  modalTitle: { fontSize: 20, fontWeight: 'bold', marginBottom: 20 },
+  clientItem: { padding: 10, borderBottomWidth: 1, borderColor: '#ddd' },
 });
 
 export default SalesConsultasScreen;

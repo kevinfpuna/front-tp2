@@ -4,12 +4,17 @@ import { RouteProp, useRoute } from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useState } from "react";
 import { useFocusEffect } from "@react-navigation/native";
-import { Client, Product } from ".";
+import { Client, Product as ImportedProduct } from ".";
 
 type SaleDetail = {
   idProducto: string;
   cantidad: number;
   precio: number;
+};
+
+type ProductDetail = {
+  idProducto: string;
+  nombre: string;
 };
 
 type SaleHeader = {
@@ -24,7 +29,7 @@ const SaleDetailsScreen = () => {
   const route = useRoute<RouteProp<{ params: { sale: SaleHeader } }, "params">>();
   const { sale } = route.params;
   const [clients, setClients] = useState<Client[]>([]);
-  const [products, setProducts] = useState<Product[]>([]);
+  const [products, setProducts] = useState<ProductDetail[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   const loadClients = async () => {
@@ -74,7 +79,7 @@ const SaleDetailsScreen = () => {
       <FlatList
         data={sale.details}
         keyExtractor={(item, index) => `${item.idProducto}-${index}`}
-        numColumns={3} // Aquí definimos el número de columnas
+        numColumns={3}
         renderItem={({ item }) => (
           <View style={styles.item}>
             <Text><Text style={styles.span}>ID:</Text> {item.idProducto}</Text>
@@ -83,7 +88,7 @@ const SaleDetailsScreen = () => {
             <Text><Text style={styles.span}>Cantidad:</Text> {item.cantidad}</Text>
           </View>
         )}
-        columnWrapperStyle={styles.row} // Ajuste para cada fila de la tabla
+        columnWrapperStyle={styles.row}
       />
 
       <Text style={styles.total}><Text style={styles.span}>Total:</Text> ${sale.total}</Text>
@@ -121,10 +126,9 @@ const styles = StyleSheet.create({
   },
   row: {
     flex: 1,
-    justifyContent: "space-between", // Espacio entre los elementos para que se distribuyan uniformemente
+    justifyContent: "space-between",
   },
   total: {
-    // Some kind of lila pastel color is #d1c4e9
     backgroundColor: '#6200ea',
     color: 'white',
     padding: 20,
