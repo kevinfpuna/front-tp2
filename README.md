@@ -1,50 +1,72 @@
-# Welcome to your Expo app 👋
+# Trabajo Práctico: Carrito de Compras
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+![React Native](https://img.shields.io/badge/React_Native-0.74.5-61DAFB?style=for-the-badge&logo=react)
+![Expo](https://img.shields.io/badge/Expo-51.0.28-000020?style=for-the-badge&logo=expo)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.3.3-007ACC?style=for-the-badge&logo=typescript)
 
-## Get started
+Este proyecto es parte de la materia **Electiva: Programación Web Front End**. Está desarrollado utilizando **React Native** con **Expo** para la implementación del carrito de compras. Además, se han utilizado diversas bibliotecas para la navegación, manejo de almacenamiento y otras funcionalidades clave.
 
-1. Install dependencies
+## Integrantes
+- Kevin Galeano
+- María José Duarte
+- Tobías Otazu
+- Ricardo Roledo
+- Enrique Saldivar
 
-   ```bash
-   npm install
-   ```
+## Requisitos
 
-2. Start the app
+Antes de comenzar, asegúrate de tener instalado lo siguiente:
 
-   ```bash
-    npx expo start
-   ```
+- [Node.js](https://nodejs.org/) (versión 14 o superior)
+- [Expo CLI](https://expo.dev/) (versión 51.0.28 o superior)
 
-In the output, you'll find options to open the app in a
+## Instalación
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
-
+1. Clona este repositorio en tu máquina local:
 ```bash
-npm run reset-project
+   git clone https://github.com/kevinfpuna/shopping-cart-app.git
 ```
+2. Navega al directorio del proyecto:
+```bash
+   cd shopping-cart-app
+```
+3. Instala las dependencias del proyecto:
+```bash
+   npm install
+```
+4. Ejecuta el proyecto en tu entorno de desarrollo:
+```bash
+   expo start
+```
+## Módulos Desarrollados
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+### 1. Administración de Categorías
+Este módulo permite la gestión completa (CRUD) de las categorías de productos.
+- **Campos:** `idCategoria`, `nombre`
+- La pantalla de listado permite filtrar por nombre de la categoría.
 
-## Learn more
+### 2. Administración de Productos
+Permite la administración (CRUD) de los productos disponibles para la compra.
+- **Campos:** `idProducto`, `nombre`, `idCategoria`, `precioVenta`
+- La pantalla de listado permite filtrar productos por nombre y categoría.
 
-To learn more about developing your project with Expo, look at the following resources:
+### 3. Módulo de Venta
+Es el módulo principal donde los usuarios pueden realizar compras.
+- **Cabecera de la venta:** `idVenta`, `fecha`, `idCliente`, `total`
+- **Detalle de la venta:** `idDetalleVenta`, `idProducto`, `cantidad`, `precio`
+- Funcionalidades clave:
+  - Buscador de productos (por nombre y categoría)
+  - Agregar productos al carrito con cantidades específicas
+  - Visualización del carrito con los productos acumulados
+  - Finalizar la orden, solicitando los datos del cliente (cedula, nombre, apellido). Si el cliente no está registrado, se agrega automáticamente.
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+### 4. Módulo de Consultas de Ventas
+Permite la consulta de ventas registradas, con filtros por fecha y cliente.
+- Al hacer clic en una venta, se pueden ver los detalles de los productos comprados, su precio y cantidad.
 
-## Join the community
+## Dependencias Principales
 
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+- **React Native:** 0.74.5
+- **Expo:** 51.0.28
+- **React Navigation:** 6.1.18
+- **TypeScript:** 5.3.3
