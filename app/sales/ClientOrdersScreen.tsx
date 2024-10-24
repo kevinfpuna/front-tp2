@@ -24,7 +24,7 @@ const ClientOrdersScreen = () => {
 
   useEffect(() => {
     loadClientSales();
-  }, []);
+  }, [clientId]);
 
   const loadClientSales = async () => {
     const storedSales = await AsyncStorage.getItem('sales');
