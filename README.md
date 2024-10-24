@@ -24,11 +24,11 @@ Antes de comenzar, asegúrate de tener instalado lo siguiente:
 
 1. Clona este repositorio en tu máquina local:
 ```bash
-   git clone https://github.com/kevinfpuna/shopping-cart-app.git
+   git clone https://github.com/kevinfpuna/front-tp2.git
 ```
 2. Navega al directorio del proyecto:
 ```bash
-   cd shopping-cart-app
+   cd front-tp2
 ```
 3. Instala las dependencias del proyecto:
 ```bash
