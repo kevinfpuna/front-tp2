@@ -21,6 +21,7 @@ export type Product = {
   nombre: string;
   idCategoria: string;
   precioVenta: number;
+  cantidadDisponible: number;
 };
 
 type ProductInCart = {
@@ -130,6 +131,22 @@ const SalesScreen = () => {
     });
   };
 
+  const validarStock = (cart: ProductInCart[], products: Product[]) => {
+    const productosInsuficientes = cart.map(itemCart => {
+      const product = products.find(p => p.idProducto === itemCart.idProducto);
+      if (product && itemCart.cantidad > product.cantidadDisponible) {
+        return {
+          nombre: itemCart.nombre,
+          cantidadPedida: itemCart.cantidad,
+          cantidadDisponible: product.cantidadDisponible
+        };
+      }
+      return null;
+    }).filter(item => item !== null);
+  
+    return productosInsuficientes;
+  };
+
   const finalizarPedido = async () => {
     if (!cedula || !nombre || !apellido || cart.length === 0) {
       Alert.alert(
@@ -140,6 +157,19 @@ const SalesScreen = () => {
     }
 
     const storedClients = await AsyncStorage.getItem('clients');
+    const storedProducts = await AsyncStorage.getItem('products');
+    const products: Product[] = storedProducts ? JSON.parse(storedProducts) : [];
+
+    const productosInsuficientes = validarStock(cart, products);
+    if (productosInsuficientes.length > 0) {
+      Alert.alert(
+        'Productos insuficientes',
+        `No hay suficiente stock para los siguientes productos:
+        ${productosInsuficientes.map(item => `${item.nombre} (Pedida: ${item.cantidadPedida}, Disponible: ${item.cantidadDisponible})`).join('\n')}`
+      );
+      return;
+    }
+
     const clients: Client[] = storedClients ? JSON.parse(storedClients) : [];
     let clientId = clients.find((client) => client.cedula === cedula)?.idCliente;
 
@@ -170,8 +200,24 @@ const SalesScreen = () => {
     const sales = storedSales ? JSON.parse(storedSales) : [];
     sales.push({ ...saleHeader, details: saleDetails });
     await AsyncStorage.setItem('sales', JSON.stringify(sales));
-
     Alert.alert('Venta completada', `El total es $${total}`);
+
+    // Disminuir la cantidad de productos en el inventario
+    const updatedProducts = products.map((product) => {
+      const productInCart = cart.find((p) => p.idProducto === product.idProducto);
+      if (productInCart) {
+        return {
+          ...product,
+          cantidadDisponible: product.cantidadDisponible - productInCart.cantidad,
+        };
+      }
+      return product;
+    });
+
+    console.log(updatedProducts);
+
+    await AsyncStorage.setItem('products', JSON.stringify(updatedProducts));
+
     setCart([]);
     setModalVisible(false);
   };
@@ -263,6 +309,7 @@ const SalesScreen = () => {
                         nombre: item.nombre,
                         idCategoria: '',
                         precioVenta: item.precio,
+                        cantidadDisponible: 1,
                       })
                     }
                   >

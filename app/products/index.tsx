@@ -8,19 +8,21 @@ import {
   StyleSheet,
   Alert,
   Modal,
-  TouchableOpacity
+  TouchableOpacity,
+  Image
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { MaterialIcons } from '@expo/vector-icons';
 import { Picker } from '@react-native-picker/picker';
 import { useFocusEffect } from '@react-navigation/native';
 
-
-type Product = {
+export type Product = {
   idProducto: string;
   nombre: string;
   idCategoria: string;
   precioVenta: number;
+  imagen: string;
+  cantidadDisponible: number;
 };
 
 type Category = {
@@ -32,6 +34,8 @@ const ProductsScreen = () => {
   const [productName, setProductName] = useState('');
   const [categoryID, setCategoryID] = useState('');
   const [price, setPrice] = useState('');
+  const [imageUrl, setImageUrl] = useState('');
+  const [quantity, setQuantity] = useState('');
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [filter, setFilter] = useState('');
@@ -40,15 +44,15 @@ const ProductsScreen = () => {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null); // Producto seleccionado para editar/eliminar
   const [isLoading, setIsLoading] = useState(true); // Estado de carga
 
-
   useEffect(() => {
     loadProducts();
   }, []);
 
-   // Recargar categorías cada vez que la pantalla se enfoque
-   useFocusEffect(
+  // Recargar categorías cada vez que la pantalla se enfoque
+  useFocusEffect(
     React.useCallback(() => {
       loadCategories();
+      loadProducts();
     }, [])
   );
 
@@ -69,7 +73,7 @@ const ProductsScreen = () => {
   };
 
   const addProduct = () => {
-    if (!productName || !categoryID || !price) {
+    if (!productName || !categoryID || !price || !imageUrl || !quantity) {
       Alert.alert('Error', 'Todos los campos son requeridos');
       return;
     }
@@ -79,12 +83,16 @@ const ProductsScreen = () => {
       nombre: productName,
       idCategoria: categoryID,
       precioVenta: parseFloat(price),
+      imagen: imageUrl,
+      cantidadDisponible: parseInt(quantity, 10),
     };
 
     storeProduct(newProduct);
     setProductName('');
     setCategoryID('');
     setPrice('');
+    setImageUrl('');
+    setQuantity('');
     setModalVisible(false);
   };
 
@@ -101,10 +109,10 @@ const ProductsScreen = () => {
   };
 
   const editProduct = async () => {
-    if (selectedProduct && productName && categoryID && price) {
+    if (selectedProduct && productName && categoryID && price && imageUrl && quantity) {
       const updatedProducts = products.map((product) =>
         product.idProducto === selectedProduct.idProducto
-          ? { ...product, nombre: productName, idCategoria: categoryID, precioVenta: parseFloat(price) }
+          ? { ...product, nombre: productName, idCategoria: categoryID, precioVenta: parseFloat(price), imagen: imageUrl, cantidadDisponible: parseInt(quantity, 10) }
           : product
       );
       setProducts(updatedProducts);
@@ -119,6 +127,8 @@ const ProductsScreen = () => {
     setProductName(product.nombre);
     setCategoryID(product.idCategoria);
     setPrice(product.precioVenta.toString());
+    setImageUrl(product.imagen);
+    setQuantity(product.cantidadDisponible.toString());
     setEditModalVisible(true); // Mostrar el modal de edición/eliminación
   };
 
@@ -146,10 +156,13 @@ const ProductsScreen = () => {
         renderItem={({ item }) => (
           <TouchableOpacity onPress={() => handleProductClick(item)}>
             <View style={styles.item}>
-              <MaterialIcons name="inventory" size={24} color="#6200ea" />
-              <Text style={styles.itemText}>
-                {item.nombre} - ${item.precioVenta} - {getCategoryNameById(item.idCategoria)}
-              </Text>
+              <Image source={{ uri: item.imagen }} style={styles.productImage} />
+              <View style={styles.itemContent}>
+                <MaterialIcons name="inventory" size={24} color="#6200ea" />
+                <Text style={styles.itemText}>
+                  {item.nombre} - ${item.precioVenta} - {getCategoryNameById(item.idCategoria)} - Cantidad: {item.cantidadDisponible}
+                </Text>
+              </View>
             </View>
           </TouchableOpacity>
         )}
@@ -202,6 +215,19 @@ const ProductsScreen = () => {
               placeholder="Precio de venta"
               value={price}
               onChangeText={setPrice}
+              keyboardType="numeric"
+            />
+            <TextInput
+              style={styles.input}
+              placeholder="URL de la imagen"
+              value={imageUrl}
+              onChangeText={setImageUrl}
+            />
+            <TextInput
+              style={styles.input}
+              placeholder="Cantidad disponible"
+              value={quantity}
+              onChangeText={setQuantity}
               keyboardType="numeric"
             />
             <View style={styles.buttonContainer}>
@@ -257,6 +283,19 @@ const ProductsScreen = () => {
               onChangeText={setPrice}
               keyboardType="numeric"
             />
+            <TextInput
+              style={styles.input}
+              placeholder="URL de la imagen"
+              value={imageUrl}
+              onChangeText={setImageUrl}
+            />
+            <TextInput
+              style={styles.input}
+              placeholder="Cantidad disponible"
+              value={quantity}
+              onChangeText={setQuantity}
+              keyboardType="numeric"
+            />
             <View style={styles.buttonContainer}>
               <Button title="Guardar" onPress={editProduct} color="#6200ea" />
               <Button title="Eliminar" onPress={deleteProduct} color="#d32f2f" />
@@ -297,6 +336,12 @@ const styles = StyleSheet.create({
     padding: 15,
     borderBottomWidth: 1,
     borderColor: '#eee',
+  },
+  itemContent: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
   },
   itemText: {
     marginLeft: 10,
@@ -348,6 +393,12 @@ const styles = StyleSheet.create({
   buttonContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+  },
+  productImage: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    marginRight: 10,
   },
 });
 
