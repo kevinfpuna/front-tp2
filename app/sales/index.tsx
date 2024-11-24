@@ -9,6 +9,8 @@ import {
   Modal,
   TouchableOpacity,
   Button,
+  Picker,
+  Image
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -43,6 +45,7 @@ type SaleHeader = {
   fecha: string;
   idCliente: string;
   total: number;
+  
 };
 
 type SaleDetail = {
@@ -62,8 +65,22 @@ const SalesScreen = () => {
   const [nombre, setNombre] = useState('');
   const [apellido, setApellido] = useState('');
   const [isLoading, setIsLoading] = useState(true); // Estado de carga
-
-
+  const [selectedCategory, setSelectedCategory] = useState('');
+  const [categories, setCategories] = useState<string[]>([]);
+  const [operationType, setOperationType] = useState<'pickup' | 'delivery'>('pickup');
+  const [deliveryPosition, setDeliveryPosition] = useState<{ latitude: number, longitude: number } | null>(null);
+const [deliveryAddress, setDeliveryAddress] = useState<string>('');
+  useFocusEffect(
+    React.useCallback(() => {
+      const loadCategoriesOnFocus = async () => {
+        const storedCategories = await AsyncStorage.getItem('categories');
+        setCategories(storedCategories ? JSON.parse(storedCategories) : []);
+      };
+  
+      loadCategoriesOnFocus();
+    }, [])
+  );
+  
     // Usamos useFocusEffect para cargar datos cuando la pantalla entra en foco
     useFocusEffect(
       React.useCallback(() => {
@@ -95,15 +112,27 @@ const SalesScreen = () => {
   const addToCart = (product: Product) => {
     setCart((prevCart) => {
       const productExists = prevCart.find((p) => p.idProducto === product.idProducto);
+      const productInInventory = products.find((p) => p.idProducto === product.idProducto);
+  
+      if (!productInInventory || productInInventory.cantidadDisponible <= 0) {
+        Alert.alert('Stock insuficiente', 'No hay suficiente stock para agregar este producto.');
+        return prevCart;
+      }
+  
       if (productExists) {
-        // Si ya existe en el carrito, incrementar la cantidad
-        return prevCart.map((p) =>
-          p.idProducto === product.idProducto
-            ? { ...p, cantidad: p.cantidad + 1 }
-            : p
-        );
+        // Si ya existe en el carrito, verificar el stock antes de incrementar la cantidad
+        if (productExists.cantidad < productInInventory.cantidadDisponible) {
+          return prevCart.map((p) =>
+            p.idProducto === product.idProducto
+              ? { ...p, cantidad: p.cantidad + 1 }
+              : p
+          );
+        } else {
+          Alert.alert('Stock insuficiente', 'No hay suficiente stock para agregar más de este producto.');
+          return prevCart;
+        }
       } else {
-        // Si no está en el carrito, agregarlo con cantidad 1
+        // Si no está en el carrito, agregarlo con cantidad 1 solo si hay stock disponible
         return [
           ...prevCart,
           {
@@ -223,8 +252,10 @@ const SalesScreen = () => {
   };
 
   const filteredProducts = products.filter((prod) =>
-    prod.nombre.toLowerCase().includes(filter.toLowerCase())
+    prod.nombre.toLowerCase().includes(filter.toLowerCase()) &&
+    (selectedCategory === '' || prod.idCategoria === selectedCategory)
   );
+  
 
   const totalCarrito = cart.reduce((sum, item) => sum + item.precio * item.cantidad, 0);
 
@@ -237,11 +268,25 @@ const SalesScreen = () => {
         value={filter}
         onChangeText={setFilter}
       />
+    <Picker
+  selectedValue={selectedCategory}
+  onValueChange={(itemValue) => setSelectedCategory(itemValue)}
+>
+  <Picker.Item label="Todas las categorías" value="" />
+  {categories.map((category) => (
+    <Picker.Item key={category.idCategoria} label={category.nombre} value={category.idCategoria} />
+  ))}
+</Picker>
+
+
+   
       <FlatList
         data={filteredProducts}
         keyExtractor={(item) => item.idProducto}
         renderItem={({ item }) => (
           <View style={styles.productItem}>
+            <Image source={{ uri: item.imagen }} style={styles.productImage} />
+
             <Text>{item.nombre} - ${item.precioVenta}</Text>
             <View style={styles.buttonContainer}>
               <TouchableOpacity
@@ -337,6 +382,12 @@ const SalesScreen = () => {
               value={apellido}
               onChangeText={setApellido}
             />
+            <Text style={styles.title}>Selecciona el tipo de operación</Text>
+            <View style={styles.buttonContainer}>
+              <Button title="Pickup" onPress={() => setOperationType('pickup')} color={operationType === 'pickup' ? '#6200ea' : '#999'} />
+              <Button title="Delivery" onPress={() => setOperationType('delivery')} color={operationType === 'delivery' ? '#6200ea' : '#999'} />
+            </View>
+            
             <View style={styles.modalButtonContainer}>
               <Button title="Finalizar Pedido" onPress={finalizarPedido} color="#6200ea" />
               <Button title="Cerrar" onPress={() => setModalVisible(false)} color="#999" />
