@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext} from 'react';
 import {
   View,
   Text,
@@ -9,13 +9,17 @@ import {
   Modal,
   TouchableOpacity,
   Button,
-  Picker,
   Image
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { MaterialIcons } from '@expo/vector-icons';
 
+import { Picker } from '@react-native-picker/picker';
+
 import { useFocusEffect } from '@react-navigation/native';
+import MapView, { Marker } from 'react-native-maps';
+
+
 
 
 export type Product = {
@@ -55,6 +59,8 @@ type SaleDetail = {
   idProducto: string;
   cantidad: number;
   precio: number;
+  location?: { latitude: number; longitude: number }; // Coordenadas 
+  locationText?: string; // Texto de la ubicación 
 };
 
 const SalesScreen = () => {
@@ -70,7 +76,19 @@ const SalesScreen = () => {
   const [categories, setCategories] = useState<string[]>([]);
   const [operationType, setOperationType] = useState<'pickup' | 'delivery'>('pickup');
   const [deliveryPosition, setDeliveryPosition] = useState<{ latitude: number, longitude: number } | null>(null);
-const [deliveryAddress, setDeliveryAddress] = useState<string>('');
+
+  const [deliveryAddress, setDeliveryAddress] = useState('');
+  const [isMapVisible, setIsMapVisible] = useState(false);
+  const [selectedLocation, setSelectedLocation] = useState(null);
+  const handleSelectLocation = (event) => {
+    const { latitude, longitude } = event.nativeEvent.coordinate;
+    setSelectedLocation({ latitude, longitude });
+  };
+
+
+  
+
+  
   useFocusEffect(
     React.useCallback(() => {
       const loadCategoriesOnFocus = async () => {
@@ -233,6 +251,9 @@ const [deliveryAddress, setDeliveryAddress] = useState<string>('');
       idProducto: item.idProducto,
       cantidad: item.cantidad,
       precio: item.precio,
+      location: operationType === 'delivery' ? selectedLocation : undefined, // Agregar latitud y longitud
+      locationText: operationType === 'delivery' ? deliveryAddress : undefined, //agregar direccion aqui
+      
     }));
   
     const storedSales = await AsyncStorage.getItem('sales');
@@ -255,6 +276,15 @@ const [deliveryAddress, setDeliveryAddress] = useState<string>('');
     });
   
     await AsyncStorage.setItem('products', JSON.stringify(updatedProducts));
+
+
+      // Limpieza de los campos
+      setCedula('');
+      setNombre('');
+      setApellido('');
+      setDeliveryAddress('');
+      setSelectedLocation(null);
+      setOperationType('pickup'); // Vuelve a la selección inicial
   
     setCart([]);
     setModalVisible(false);
@@ -399,14 +429,59 @@ const [deliveryAddress, setDeliveryAddress] = useState<string>('');
             </View>
             {/* Campo de dirección, solo visible cuando se selecciona 'delivery' */}
             {operationType === 'delivery' && (
+              <View>
+                 <Button
+            title="Seleccionar punto en el mapa"
+            onPress={() => setIsMapVisible(true)}
+            color="#6200ea"
+          />
+
               <TextInput
                 style={styles.input}
                 placeholder="Dirección de entrega"
                 value={deliveryAddress}
                 onChangeText={setDeliveryAddress}
               />
-            )}
+              </View>
 
+            )}
+            <Modal visible={isMapVisible} animationType="slide">
+        <View style={{ flex: 1 }}>
+          <MapView
+            style={{ flex: 1 }}
+            onPress={handleSelectLocation}
+            initialRegion={{
+              latitude: -25.2637, // Latitud inicial
+              longitude: -57.5759, // Longitud inicial
+              latitudeDelta: 0.05,
+              longitudeDelta: 0.05,
+            }}
+          >
+            {selectedLocation && (
+              <Marker
+                coordinate={{
+                  latitude: selectedLocation.latitude,
+                  longitude: selectedLocation.longitude,
+                }}
+              />
+            )}
+          </MapView>
+          <View style={styles.modalButtonContainer}>
+            <Button
+              title="Confirmar"
+              onPress={() => {
+                setIsMapVisible(false);
+              }}
+              color="#6200ea"
+            />
+            <Button
+              title="Cerrar"
+              onPress={() => setIsMapVisible(false)}
+              color="#999"
+            />
+          </View>
+        </View>
+      </Modal>
             
             <View style={styles.modalButtonContainer}>
               <Button title="Finalizar Pedido" onPress={finalizarPedido} color="#6200ea" />

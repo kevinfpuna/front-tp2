@@ -1,15 +1,19 @@
 import React from "react";
-import { View, Text, StyleSheet, FlatList } from "react-native";
+import { View, Text, StyleSheet, FlatList, Button, Modal } from "react-native";
 import { RouteProp, useRoute } from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useState } from "react";
 import { useFocusEffect } from "@react-navigation/native";
 import { Client, Product as ImportedProduct } from ".";
+import MapView, { Marker } from "react-native-maps"; // Importar MapView y Marker
+
 
 type SaleDetail = {
   idProducto: string;
   cantidad: number;
   precio: number;
+  location?: { latitude: number; longitude: number }; // Coordenadas 
+  locationText?: string; // Texto de la ubicación 
 };
 
 type ProductDetail = {
@@ -23,6 +27,7 @@ type SaleHeader = {
   idCliente: string;
   total: number;
   details: SaleDetail[];
+  tipoOperacion: string; // Agregar este campo
 };
 
 const SaleDetailsScreen = () => {
@@ -31,6 +36,8 @@ const SaleDetailsScreen = () => {
   const [clients, setClients] = useState<Client[]>([]);
   const [products, setProducts] = useState<ProductDetail[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [mapVisible, setMapVisible] = useState(false); // Estado para mostrar el mapa
+
 
   const loadClients = async () => {
     const storedClients = await AsyncStorage.getItem("clients");
@@ -74,6 +81,19 @@ const SaleDetailsScreen = () => {
       <View>
         <Text style={styles.h1}>{getNombreCompletoCliente(sale.idCliente)} - {new Date(sale.fecha).toLocaleDateString()}</Text>
         <Text style={styles.h3}><Text style={styles.span}>ID Venta:</Text> {sale.idVenta}</Text>
+
+      {sale.tipoOperacion === "delivery" && (
+        <View>
+          <Text style={styles.h3}>
+            <Text style={styles.span}>Ubicación:</Text> {sale.details[0]?.locationText || "No especificada"}
+          </Text>
+          <Button
+            title="Ver ubicación en el mapa"
+            onPress={() => setMapVisible(true)}
+            color="#6200ea"
+          />
+        </View>
+      )}
       </View>
 
       <FlatList
@@ -92,6 +112,31 @@ const SaleDetailsScreen = () => {
       />
 
       <Text style={styles.total}><Text style={styles.span}>Total:</Text> ${sale.total}</Text>
+      {/* Modal para mostrar el mapa */}
+      {sale.tipoOperacion === "delivery" && (
+        <Modal visible={mapVisible} animationType="slide">
+          <View style={{ flex: 1 }}>
+            <MapView
+              style={{ flex: 1 }}
+              initialRegion={{
+                latitude: sale.details[0]?.location?.latitude || 0,
+                longitude: sale.details[0]?.location?.longitude || 0,
+                latitudeDelta: 0.01,
+                longitudeDelta: 0.01,
+              }}
+            >
+              {sale.details[0]?.location && (
+                <Marker
+                  coordinate={sale.details[0].location}
+                  title="Ubicación de entrega"
+                  description={sale.details[0]?.locationText || "No especificada"}
+                />
+              )}
+            </MapView>
+            <Button title="Cerrar mapa" onPress={() => setMapVisible(false)} />
+          </View>
+        </Modal>
+      )}
     </View>
   );
 };

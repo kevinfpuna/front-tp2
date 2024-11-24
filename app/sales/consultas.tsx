@@ -14,6 +14,9 @@ import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { useFocusEffect } from '@react-navigation/native';
 
+import { Picker } from '@react-native-picker/picker'; //picker
+
+
 type SaleHeader = {
   idVenta: string;
   fecha: string;
@@ -44,12 +47,16 @@ type RootStackParamList = {
 const SalesConsultasScreen = () => {
   const [sales, setSales] = useState<SaleHeader[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
-  const [filter, setFilter] = useState({ fecha: '', cedula: '' });
+  const [filter, setFilter] = useState({ fecha: '', cedula: '', tipoOperacion: '' });
   const [clientModalVisible, setClientModalVisible] = useState(false);
   const [filteredClients, setFilteredClients] = useState<Client[]>([]);
   const [clientSearch, setClientSearch] = useState('');
+  const [mapModalVisible, setMapModalVisible] = useState(false);
+  const [selectedLocation, setSelectedLocation] = useState<{ latitude: number; longitude: number } | null>(null);
   console.log('sales:', sales);
   const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
+
+  
 
   useFocusEffect(
     React.useCallback(() => {
@@ -79,8 +86,16 @@ const SalesConsultasScreen = () => {
   const filteredSales = sales.filter((sale) => {
     const byFecha = filter.fecha ? sale.fecha.includes(filter.fecha) : true;
     const byCedula = filter.cedula ? sale.idCliente.includes(filter.cedula) : true;
-    return byFecha && byCedula;
+    const byTipoOperacion = filter.tipoOperacion ? sale.tipoOperacion === filter.tipoOperacion : true;
+
+
+    return byFecha && byCedula && byTipoOperacion;
   });
+
+  const handleOpenMap = (location: { latitude: number; longitude: number }) => {
+    setSelectedLocation(location);
+    setMapModalVisible(true);
+  };
 
   const handleClientSearch = (text: string) => {
     setClientSearch(text);
@@ -129,6 +144,24 @@ const SalesConsultasScreen = () => {
         value={filter.fecha}
         onChangeText={(text) => setFilter({ ...filter, fecha: text })}
       />
+
+      <Picker
+        selectedValue={filter.tipoOperacion}
+        onValueChange={(itemValue) => {
+          // Forzar la actualización del estado incluso si es el mismo valor
+          if (filter.tipoOperacion !== itemValue) {
+            setFilter({ ...filter, tipoOperacion: itemValue });
+          }
+        }}
+        style={styles.picker}
+      >
+              <Picker.Item label="Seleccionar tipo de operación" value="" />
+              <Picker.Item label="Pickup" value="pickup" />
+              <Picker.Item label="Delivery" value="delivery" />
+              <Picker.Item label="Todos" value="" /> 
+
+
+            </Picker>
 
       <TouchableOpacity
         style={styles.clientButton}
@@ -194,6 +227,13 @@ const styles = StyleSheet.create({
   modalContent: { width: 300, padding: 20, backgroundColor: 'white', borderRadius: 10 },
   modalTitle: { fontSize: 20, fontWeight: 'bold', marginBottom: 20 },
   clientItem: { padding: 10, borderBottomWidth: 1, borderColor: '#ddd' },
+  picker: {
+    height: 50,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
+  },
 });
 
 export default SalesConsultasScreen;
