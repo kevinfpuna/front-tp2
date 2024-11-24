@@ -45,6 +45,7 @@ type SaleHeader = {
   fecha: string;
   idCliente: string;
   total: number;
+  tipoOperacion: 'pickup' | 'delivery'; // Nuevo campo para el tipo de operación
   
 };
 
@@ -184,11 +185,19 @@ const [deliveryAddress, setDeliveryAddress] = useState<string>('');
       );
       return;
     }
-
+  
+    if (operationType === 'delivery' && !deliveryAddress) {
+      Alert.alert(
+        'Datos incompletos',
+        'Para una entrega (delivery), debes proporcionar una dirección.'
+      );
+      return;
+    }
+  
     const storedClients = await AsyncStorage.getItem('clients');
     const storedProducts = await AsyncStorage.getItem('products');
     const products: Product[] = storedProducts ? JSON.parse(storedProducts) : [];
-
+  
     const productosInsuficientes = validarStock(cart, products);
     if (productosInsuficientes.length > 0) {
       Alert.alert(
@@ -198,16 +207,16 @@ const [deliveryAddress, setDeliveryAddress] = useState<string>('');
       );
       return;
     }
-
+  
     const clients: Client[] = storedClients ? JSON.parse(storedClients) : [];
     let clientId = clients.find((client) => client.cedula === cedula)?.idCliente;
-
+  
     if (!clientId) {
       clientId = `${clients.length + 1}`;
       clients.push({ idCliente: clientId, cedula, nombre, apellido });
       await AsyncStorage.setItem('clients', JSON.stringify(clients));
     }
-
+  
     const idVenta = Date.now().toString();
     const total = cart.reduce((sum, item) => sum + item.precio * item.cantidad, 0);
     const saleHeader: SaleHeader = {
@@ -215,8 +224,9 @@ const [deliveryAddress, setDeliveryAddress] = useState<string>('');
       fecha: new Date().toISOString(),
       idCliente: clientId,
       total,
+      tipoOperacion: operationType, // Agregamos el tipo de operación aquí
     };
-
+  
     const saleDetails: SaleDetail[] = cart.map((item, index) => ({
       idVenta,
       idDetalleVenta: `${idVenta}-${index}`,
@@ -224,13 +234,14 @@ const [deliveryAddress, setDeliveryAddress] = useState<string>('');
       cantidad: item.cantidad,
       precio: item.precio,
     }));
-
+  
     const storedSales = await AsyncStorage.getItem('sales');
     const sales = storedSales ? JSON.parse(storedSales) : [];
+    console.log(saleHeader);
     sales.push({ ...saleHeader, details: saleDetails });
     await AsyncStorage.setItem('sales', JSON.stringify(sales));
     Alert.alert('Venta completada', `El total es $${total}`);
-
+  
     // Disminuir la cantidad de productos en el inventario
     const updatedProducts = products.map((product) => {
       const productInCart = cart.find((p) => p.idProducto === product.idProducto);
@@ -242,14 +253,13 @@ const [deliveryAddress, setDeliveryAddress] = useState<string>('');
       }
       return product;
     });
-
-    console.log(updatedProducts);
-
+  
     await AsyncStorage.setItem('products', JSON.stringify(updatedProducts));
-
+  
     setCart([]);
     setModalVisible(false);
   };
+  
 
   const filteredProducts = products.filter((prod) =>
     prod.nombre.toLowerCase().includes(filter.toLowerCase()) &&
@@ -387,6 +397,16 @@ const [deliveryAddress, setDeliveryAddress] = useState<string>('');
               <Button title="Pickup" onPress={() => setOperationType('pickup')} color={operationType === 'pickup' ? '#6200ea' : '#999'} />
               <Button title="Delivery" onPress={() => setOperationType('delivery')} color={operationType === 'delivery' ? '#6200ea' : '#999'} />
             </View>
+            {/* Campo de dirección, solo visible cuando se selecciona 'delivery' */}
+            {operationType === 'delivery' && (
+              <TextInput
+                style={styles.input}
+                placeholder="Dirección de entrega"
+                value={deliveryAddress}
+                onChangeText={setDeliveryAddress}
+              />
+            )}
+
             
             <View style={styles.modalButtonContainer}>
               <Button title="Finalizar Pedido" onPress={finalizarPedido} color="#6200ea" />

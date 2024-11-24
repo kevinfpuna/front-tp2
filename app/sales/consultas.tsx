@@ -19,6 +19,7 @@ type SaleHeader = {
   fecha: string;
   idCliente: string;
   total: number;
+  tipoOperacion: string; // Agregar este campo
   details: SaleDetail[];
 };
 
@@ -47,7 +48,7 @@ const SalesConsultasScreen = () => {
   const [clientModalVisible, setClientModalVisible] = useState(false);
   const [filteredClients, setFilteredClients] = useState<Client[]>([]);
   const [clientSearch, setClientSearch] = useState('');
-
+  console.log('sales:', sales);
   const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
 
   useFocusEffect(
@@ -135,7 +136,6 @@ const SalesConsultasScreen = () => {
       >
         <Text style={styles.clientButtonText}>Buscar Cliente</Text>
       </TouchableOpacity>
-
       <FlatList
         data={filteredSales}
         keyExtractor={(item) => item.idVenta}
@@ -147,6 +147,8 @@ const SalesConsultasScreen = () => {
             <Text>Fecha: {parseDate(item.fecha)}</Text>
             <Text>Total: ${item.total}</Text>
             <Text>Cliente: {getNombreCompletoCliente(item.idCliente)}</Text>
+            <Text>Tipo de Operación: {item.tipoOperacion || 'No especificado'}</Text>
+
           </TouchableOpacity>
         )}
       />
