@@ -28,6 +28,7 @@ export type Product = {
   idCategoria: string;
   precioVenta: number;
   cantidadDisponible: number;
+  imagen: string;
 };
 
 type ProductInCart = {
@@ -423,7 +424,7 @@ const SalesScreen = () => {
               onChangeText={setApellido}
             />
             <Text style={styles.title}>Selecciona el tipo de operación</Text>
-            <View style={styles.buttonContainer}>
+            <View style={styles.buttonContainer2}>
               <Button title="Pickup" onPress={() => setOperationType('pickup')} color={operationType === 'pickup' ? '#6200ea' : '#999'} />
               <Button title="Delivery" onPress={() => setOperationType('delivery')} color={operationType === 'delivery' ? '#6200ea' : '#999'} />
             </View>
@@ -524,6 +525,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
+  buttonContainer2: {
+    flexDirection: 'column-reverse',
+    alignItems: 'center',
+  },
   quantityButton: {
     padding: 8,
     borderRadius: 20,
@@ -592,6 +597,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     marginTop: 20,
+  },
+  productImage: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    marginRight: 10,
   },
 });
 
